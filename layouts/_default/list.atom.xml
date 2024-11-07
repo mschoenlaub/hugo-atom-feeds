@@ -51,10 +51,10 @@
 {{- $logo := .logo | default "logo.svg" -}}
 {{with resources.Get $logo -}}<logo>{{ (. | fingerprint).Permalink }}</logo>{{ end }}
 {{ end }}
-{{- with $authorName -}}
+{{- with $authorName }}
 <author>
     <name>{{ . }}</name>
-    {{ with $authorEmail }}
+    {{- with $authorEmail }}
     <email>{{ . }}</email>
     {{ end -}}
 </author>
@@ -70,7 +70,7 @@
         {{- with .Param "name" }}
         <name>{{ . }}</name>
         {{- else -}}
-        <name>{{ . }}</name>
+        <name>{{ .Title }}</name>
         {{ end -}}
         {{- with .Param "email" }}
         <email>{{ . }}</email>
@@ -79,13 +79,15 @@
     {{- end }}
     {{- end }}
     <title>{{ .Title }}</title>
-    {{- with .OutputFormats.Get "HTML" }}
+    {{- range .AlternativeOutputFormats }}
     {{ printf "<link rel=%q href=%q type=%q />" "alternate" .Permalink .MediaType | safeHTML }}
     {{- end }}
     <updated>{{ .Lastmod.Format "2006-01-02T15:04:05-07:00" | safeHTML }}</updated>
     <published>{{ .PublishDate.Format "2006-01-02T15:04:05-07:00" | safeHTML }}</published>
     <id>{{ .Permalink }}</id>
-    <content src="{{ .Permalink | safeURL }}" type="html" />
+    {{- with .OutputFormats.Get "HTML" }}
+    {{ printf "<content src=%q type=%q />" .Permalink .MediaType | safeHTML }}
+    {{- end }}
     <summary type="html">{{ .Summary | transform.XMLEscape }}</summary>
 </entry>
 {{- end }}
