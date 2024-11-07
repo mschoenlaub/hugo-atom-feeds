@@ -1,0 +1,92 @@
+{{- $authorEmail := "" }}
+{{- with site.Params.author }}
+  {{- if reflect.IsMap . }}
+    {{- with .email }}
+      {{- $authorEmail = . }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
+{{- $authorName := "" }}
+{{- with site.Params.author }}
+  {{- if reflect.IsMap . }}
+    {{- with .name }}
+      {{- $authorName = . }}
+    {{- end }}
+  {{- else }}
+    {{- $authorName  = . }}
+  {{- end }}
+{{- end }}
+
+{{- $pctx := . }}
+{{- if .IsHome }}{{ $pctx = .Site }}{{ end }}
+{{- $pages := slice }}
+{{- if or $.IsHome $.IsSection }}
+{{- $pages = $pctx.RegularPages }}
+{{- else }}
+{{- $pages = $pctx.Pages }}
+{{- end }}
+{{- $limit := .Site.Config.Services.RSS.Limit }}
+{{- if ge $limit 1 }}
+{{- $pages = $pages | first $limit }}
+{{- end }}
+{{- printf `<?xml version="1.0" encoding="utf-8"?>` | safeHTML }}
+<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="{{ site.Language.LanguageCode }}">
+<generator uri="https://gohugo.io/" version="{{ hugo.Version }}">Hugo</generator>
+<title>{{ if eq .Title .Site.Title }}{{ .Site.Title }}{{ else }}{{ with .Title }}{{ . }} {{ (i18n "feed_title_on" | default "on") }} {{ end }}{{ .Site.Title }}{{ end }}</title>
+{{- if not .Date.IsZero }}
+<updated>{{ (index $pages.ByLastmod.Reverse 0).Lastmod.Format "2006-01-02T15:04:05-07:00" | safeHTML }}</updated>
+{{- end }}
+{{with site.Params.id }}<id>{{ . | plainify }}</id>{{ else }}<id>{{ .Permalink }}</id>{{ end }}
+{{- with site.Copyright -}}
+{{- $copyright := replace . "{year}" now.Year -}} {{/* In case the site.copyright uses a special string "{year}" */}}
+{{- $copyright = replace $copyright "&copy;" "©" -}}
+<rights>{{ $copyright | plainify }}</rights>
+{{- end -}}
+{{ with .Param "feed" }}
+{{- $icon := .icon | default "icon.svg" -}}
+{{- with resources.Get $icon -}}
+<icon>{{ (. | fingerprint).Permalink }}</icon>
+{{- end }}
+{{- $logo := .logo | default "logo.svg" -}}
+{{with resources.Get $logo -}}<logo>{{ (. | fingerprint).Permalink }}</logo>{{ end }}
+{{ end }}
+{{- with $authorName -}}
+<author>
+    <name>{{ . }}</name>
+    {{ with $authorEmail }}
+    <email>{{ . }}</email>
+    {{ end -}}
+</author>
+{{- end -}}
+{{- with .OutputFormats.Get "ATOM" }}
+{{ printf "<link href=%q rel=\"self\" type=%q />" .Permalink .MediaType | safeHTML }}
+{{- end }}
+{{- range $pages }}
+<entry>
+    {{- with .GetTerms "authors" }}
+    {{- range . }}
+    <author>
+        {{- with .Param "name" }}
+        <name>{{ . }}</name>
+        {{- else -}}
+        <name>{{ . }}</name>
+        {{ end -}}
+        {{- with .Param "email" }}
+        <email>{{ . }}</email>
+        {{- end }}
+    </author>
+    {{- end }}
+    {{- end }}
+    <title>{{ .Title }}</title>
+    {{- with .OutputFormats.Get "HTML" }}
+    {{ printf "<link rel=%q href=%q type=%q />" "alternate" .Permalink .MediaType | safeHTML }}
+    {{- end }}
+    <updated>{{ .Lastmod.Format "2006-01-02T15:04:05-07:00" | safeHTML }}</updated>
+    <published>{{ .PublishDate.Format "2006-01-02T15:04:05-07:00" | safeHTML }}</published>
+    <id>{{ .Permalink }}</id>
+    <content src="{{ .Permalink | safeURL }}" type="html" />
+    <summary type="html">{{ .Summary | transform.XMLEscape }}</summary>
+</entry>
+{{- end }}
+</feed>

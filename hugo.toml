@@ -1,0 +1,17 @@
+[mediaTypes."application/atom+xml"]
+suffixes = ["xml"]
+
+[outputFormats.Atom]
+# https://validator.w3.org/feed/docs/atom.html#whatIsAtom
+name = "Atom"
+mediaType = "application/atom+xml"
+baseName = "atom"
+isPlainText = false
+rel = "alternate"
+isHTML = false
+noUgly = true
+permalinkable = false
+
+[module]
+[module.hugoVersion]
+min = "0.136.3"
